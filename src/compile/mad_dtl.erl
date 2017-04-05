@@ -6,7 +6,7 @@ compile(Dir,Config) ->
   case mad_utils:get_value(erlydtl_opts, Config, []) of
     [] -> false;
     X -> {SubRoots,Default} = lists:partition(fun(O) -> is_list(O) end, validate_erlydtl_opts(Dir,X)),
-      lists:foldl(fun(Root,Acc) -> [compile_erlydtl_files(Root)|Acc] end,[], [Default]++SubRoots)
+      hd(lists:reverse(lists:usort(lists:foldl(fun(Root,Acc) -> [compile_erlydtl_files(Root)|Acc] end,[], [Default]++SubRoots))))
   end.
 
 get_kv(K, Opts, Default) ->
