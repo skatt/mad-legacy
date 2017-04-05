@@ -45,7 +45,7 @@ validate_erlydtl_opts(Cwd, Opts) ->
              {_, OutDir12} = OutDir_2,
              OutDir22 = {out_dir, filename:join(Cwd, OutDir12)},
 
-             [[DocRoot12, OutDir22, CompilerOpts2, SourceExt2, ModuleExt2|Opts52]];
+             [DocRoot12, OutDir22, CompilerOpts2, SourceExt2, ModuleExt2|Opts52];
            _ -> [O]
          end,
     OO++Acc
