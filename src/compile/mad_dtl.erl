@@ -3,31 +3,53 @@
 -compile(export_all).
 
 compile(Dir,Config) ->
-    case mad_utils:get_value(erlydtl_opts, Config, []) of
-        [] -> false;
-         X -> compile_erlydtl_files(validate_erlydtl_opts(Dir,X)) end.
+  case mad_utils:get_value(erlydtl_opts, Config, []) of
+    [] -> false;
+    X -> {SubRoots,Default} = lists:partition(fun(O) -> is_list(O) end, validate_erlydtl_opts(Dir,X)),
+      lists:foreach(fun(Root) -> compile_erlydtl_files(Root) end, Default++SubRoots)
+  end.
 
 get_kv(K, Opts, Default) ->
-    V = mad_utils:get_value(K, Opts, Default),
-    KV = {K, V},
-    {KV, Opts -- [KV]}.
+  V = mad_utils:get_value(K, Opts, Default),
+  KV = {K, V},
+  {KV, Opts -- [KV]}.
 
 file_to_beam(Bin, Filename) -> filename:join(Bin, filename:basename(Filename) ++ ".beam").
 
 validate_erlydtl_opts(Cwd, Opts) ->
-    DefaultDocRoot = filename:join("priv", "templates"),
-    {DocRoot, Opts1} = get_kv(doc_root, Opts, DefaultDocRoot),
-    {OutDir, Opts2} = get_kv(out_dir, Opts1, "ebin"),
-    {CompilerOpts, Opts3} = get_kv(compiler_options, Opts2, []),
-    {SourceExt, Opts4} = get_kv(source_ext, Opts3, ".dtl"),
-    {ModuleExt, Opts5} = get_kv(module_ext, Opts4, ""),
+  DefaultDocRoot = filename:join("priv", "templates"),
+  {DocRoot, Opts1} = get_kv(doc_root, Opts, DefaultDocRoot),
+  {OutDir, Opts2} = get_kv(out_dir, Opts1, "ebin"),
+  {CompilerOpts, Opts3} = get_kv(compiler_options, Opts2, []),
+  {SourceExt, Opts4} = get_kv(source_ext, Opts3, ".dtl"),
+  {ModuleExt, Opts5} = get_kv(module_ext, Opts4, ""),
 
-    {_, DocRootDir} = DocRoot,
-    DocRoot1 = {doc_root, filename:join(Cwd, DocRootDir)},
-    {_, OutDir1} = OutDir,
-    OutDir2 = {out_dir, filename:join(Cwd, OutDir1)},
+  {_, DocRootDir} = DocRoot,
+  DocRoot1 = {doc_root, filename:join(Cwd, DocRootDir)},
+  {_, OutDir1} = OutDir,
+  OutDir2 = {out_dir, filename:join(Cwd, OutDir1)},
 
-    [DocRoot1, OutDir2, CompilerOpts, SourceExt, ModuleExt|Opts5].
+  Opts6 = lists:foldl(fun(O,Acc) ->
+    OO = case is_list(O) of
+           true ->
+             {DocRoot2, Opts12} = get_kv(doc_root, O, DocRoot),
+             {OutDir_2, Opts22} = get_kv(out_dir, Opts12, OutDir),
+             {CompilerOpts2, Opts32} = get_kv(compiler_options, Opts22, CompilerOpts),
+             {SourceExt2, Opts42} = get_kv(source_ext, Opts32, SourceExt),
+             {ModuleExt2, Opts52} = get_kv(module_ext, Opts42, ModuleExt),
+
+             {_, DocRootDir2} = DocRoot2,
+             DocRoot12 = {doc_root, filename:join(Cwd, DocRootDir2)},
+             {_, OutDir12} = OutDir_2,
+             OutDir22 = {out_dir, filename:join(Cwd, OutDir12)},
+
+             [DocRoot12, OutDir22, CompilerOpts2, SourceExt2, ModuleExt2|Opts52];
+           _ -> [O]
+         end,
+    OO++Acc
+                      end, [], Opts5),
+
+  [DocRoot1, OutDir2, CompilerOpts, SourceExt, ModuleExt|Opts6].
 
 module_name(File, Ext, NewExt) ->
     list_to_atom(filename:basename(File, Ext) ++ NewExt).
