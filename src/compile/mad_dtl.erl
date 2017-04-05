@@ -29,27 +29,29 @@ validate_erlydtl_opts(Cwd, Opts) ->
   {_, OutDir1} = OutDir,
   OutDir2 = {out_dir, filename:join(Cwd, OutDir1)},
 
+  Res = [DocRoot1, OutDir2, CompilerOpts, SourceExt, ModuleExt],
+
   Opts6 = lists:foldl(fun(O,Acc) ->
     OO = case is_list(O) of
            true ->
-             {DocRoot2, Opts12} = get_kv(doc_root, O, DocRoot),
-             {OutDir_2, Opts22} = get_kv(out_dir, Opts12, OutDir),
-             {CompilerOpts2, Opts32} = get_kv(compiler_options, Opts22, CompilerOpts),
-             {SourceExt2, Opts42} = get_kv(source_ext, Opts32, SourceExt),
-             {ModuleExt2, Opts52} = get_kv(module_ext, Opts42, ModuleExt),
+             {DocRoot2, Opts12} = get_kv(doc_root, O, mad_utils:get_value(doc_root, Res, DefaultDocRoot)),
+             {OutDir_2, Opts22} = get_kv(out_dir, Opts12, mad_utils:get_value(out_dir, Res, "ebin")),
+             {CompilerOpts2, Opts32} = get_kv(compiler_options, Opts22, mad_utils:get_value(compiler_options, Res, [])),
+             {SourceExt2, Opts42} = get_kv(source_ext, Opts32, mad_utils:get_value(source_ext, Res, ".dtl")),
+             {ModuleExt2, Opts52} = get_kv(module_ext, Opts42, mad_utils:get_value(module_ext, Res, "")),
 
              {_, DocRootDir2} = DocRoot2,
              DocRoot12 = {doc_root, filename:join(Cwd, DocRootDir2)},
              {_, OutDir12} = OutDir_2,
              OutDir22 = {out_dir, filename:join(Cwd, OutDir12)},
 
-             [DocRoot12, OutDir22, CompilerOpts2, SourceExt2, ModuleExt2|Opts52];
+             [[DocRoot12, OutDir22, CompilerOpts2, SourceExt2, ModuleExt2|Opts52]];
            _ -> [O]
          end,
     OO++Acc
                       end, [], Opts5),
 
-  [DocRoot1, OutDir2, CompilerOpts, SourceExt, ModuleExt|Opts6].
+  Res++Opts6.
 
 module_name(File, Ext, NewExt) ->
     list_to_atom(filename:basename(File, Ext) ++ NewExt).
