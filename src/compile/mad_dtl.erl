@@ -53,7 +53,7 @@ validate_erlydtl_opts(Cwd, Opts) ->
   {_, OutDir1} = OutDir,
   OutDir2 = {out_dir, filename:join(Cwd, OutDir1)},
 
-  [DocRoot1, OutDir1, CompilerOpts, SourceExt, ModuleExt|Opts6].
+  [DocRoot1, OutDir2, CompilerOpts, SourceExt, ModuleExt|Opts6].
 
 module_name(File, Ext, NewExt) ->
     list_to_atom(filename:basename(File, Ext) ++ NewExt).
