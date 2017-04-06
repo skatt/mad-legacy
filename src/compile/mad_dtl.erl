@@ -2,6 +2,12 @@
 -copyright('Sina Samavati').
 -compile(export_all).
 
+-define(DTL_ROOT,filename:join("priv", "templates")).
+-define(DTL_OUT,"ebin").
+-define(DTL_COPTS,[]).
+-define(DTL_SRC_EXT,".dtl").
+-define(DTL_MOD_EXT,"").
+
 compile(Dir,Config) ->
   case mad_utils:get_value(erlydtl_opts, Config, []) of
     [] -> false;
@@ -16,37 +22,36 @@ get_kv(K, Opts, Default) ->
 
 file_to_beam(Bin, Filename) -> filename:join(Bin, filename:basename(Filename) ++ ".beam").
 
-validate_erlydtl_opts(Cwd, Opts) ->
-  DefaultDocRoot = filename:join("priv", "templates"),
-  {DocRoot, Opts1} = get_kv(doc_root, Opts, DefaultDocRoot),
-  {OutDir, Opts2} = get_kv(out_dir, Opts1, "ebin"),
-  {CompilerOpts, Opts3} = get_kv(compiler_options, Opts2, []),
-  {SourceExt, Opts4} = get_kv(source_ext, Opts3, ".dtl"),
-  {ModuleExt, Opts5} = get_kv(module_ext, Opts4, ""),
-
-
-  Res = [DocRoot, OutDir, CompilerOpts, SourceExt, ModuleExt],
-
-  Opts6 = lists:foldl(fun(O,Acc) ->
+validate_subroot_opts(Cwd,Opts,Defaults) ->
+  lists:foldl(fun(O,Acc) ->
     OO = case is_list(O) of
            true ->
-             {DocRoot2, Opts12} = get_kv(doc_root, O, mad_utils:get_value(doc_root, Res, DefaultDocRoot)),
-             {OutDir_2, Opts22} = get_kv(out_dir, Opts12, mad_utils:get_value(out_dir, Res, "ebin")),
-             {CompilerOpts2, Opts32} = get_kv(compiler_options, Opts22, mad_utils:get_value(compiler_options, Res, [])),
-             {SourceExt2, Opts42} = get_kv(source_ext, Opts32, mad_utils:get_value(source_ext, Res, ".dtl")),
-             {ModuleExt2, Opts52} = get_kv(module_ext, Opts42, mad_utils:get_value(module_ext, Res, "")),
+             {DocRoot, Opts1} = get_kv(doc_root, O, mad_utils:get_value(doc_root, Defaults, ?DTL_ROOT)),
+             {OutDir, Opts2} = get_kv(out_dir, Opts1, mad_utils:get_value(out_dir, Defaults, ?DTL_OUT)),
+             {CompilerOpts, Opts3} = get_kv(compiler_options, Opts2, mad_utils:get_value(compiler_options, Defaults, ?DTL_COPTS)),
+             {SourceExt, Opts4} = get_kv(source_ext, Opts3, mad_utils:get_value(source_ext, Defaults, ?DTL_SRC_EXT)),
+             {ModuleExt, Opts5} = get_kv(module_ext, Opts4, mad_utils:get_value(module_ext, Defaults, ?DTL_MOD_EXT)),
 
 
-             {_, DocRootDir2} = DocRoot2,
-             DocRoot12 = {doc_root, filename:join(Cwd, DocRootDir2)},
-             {_, OutDir12} = OutDir_2,
-             OutDir22 = {out_dir, filename:join(Cwd, OutDir12)},
+             {_, DocRootDir} = DocRoot,
+             DocRoot1 = {doc_root, filename:join(Cwd, DocRootDir)},
+             {_, OutDir1} = OutDir,
+             OutDir2 = {out_dir, filename:join(Cwd, OutDir1)},
 
-             [DocRoot12, OutDir22, CompilerOpts2, SourceExt2, ModuleExt2|Opts52];
+             [DocRoot1, OutDir2, CompilerOpts, SourceExt, ModuleExt|Opts5];
            _ -> O
          end,
     [OO|Acc]
-                      end, [], Opts5),
+              end, [], Opts).
+
+validate_erlydtl_opts(Cwd, Opts) ->
+  {DocRoot, Opts1} = get_kv(doc_root, Opts, ?DTL_ROOT),
+  {OutDir, Opts2} = get_kv(out_dir, Opts1, ?DTL_OUT),
+  {CompilerOpts, Opts3} = get_kv(compiler_options, Opts2, ?DTL_COPTS),
+  {SourceExt, Opts4} = get_kv(source_ext, Opts3, ?DTL_SRC_EXT),
+  {ModuleExt, Opts5} = get_kv(module_ext, Opts4, ?DTL_MOD_EXT),
+
+  Opts6 = validate_subroot_opts(Cwd,Opts5,[DocRoot, OutDir, CompilerOpts, SourceExt, ModuleExt]),
 
   {_, DocRootDir} = DocRoot,
   DocRoot1 = {doc_root, filename:join(Cwd, DocRootDir)},
