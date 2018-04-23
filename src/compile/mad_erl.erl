@@ -1,9 +1,13 @@
 -module(mad_erl).
 -copyright('Sina Samavati').
 -compile(export_all).
--define(COMPILE_OPTS(Inc, Ebin, Opts, Deps), [return_errors, return_warnings, debug_info, {i, [Inc]}, {outdir, Ebin}] ++ Opts++Deps).
+-define(COMPILE_OPTS(Inc, Ebin, Opts, Deps),
+    [return_errors, return_warnings, debug_info,
+    {i, [Inc]}, {outdir, Ebin}] ++ Opts ++ Deps).
 
 erl_to_beam(Bin, F) -> filename:join(Bin, filename:basename(F, ".erl") ++ ".beam").
+
+filter(I) -> [ X || X <- I, X /= warnings_as_errors, X /= warn_export_all, X /=warn_unused_import] .
 
 compile(File,Inc,Bin,Opt,Deps) ->
     BeamFile = erl_to_beam(Bin, File),
@@ -11,7 +15,7 @@ compile(File,Inc,Bin,Opt,Deps) ->
     if  Compiled =:= false ->
         Opts1 = ?COMPILE_OPTS(Inc, Bin, Opt, Deps),
         mad:info("Compiling ~s~n", [File -- mad_utils:cwd()]),
-        ret(compile:file(File, Opts1));
+        ret(compile:file(File, filter(Opts1)));
     true -> false end.
 
 ret(error) -> true;
